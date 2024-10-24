@@ -10,6 +10,10 @@
     "./types": {
       "types": "./types.d.ts",
       "import":"./dist/types.mjs"
+    },
+    "./utils": {
+      "types": "./utils.d.ts",
+      "import":"./dist/utils.mjs"
     }
   },
   "scripts": {
