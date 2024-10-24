@@ -14,6 +14,7 @@ export default defineConfig({
     alias: {
       "mini-react": resolve(__dirname, "./../packages/react/src/index"),
       "mini-react-dom": resolve(__dirname, "./../packages/react-dom/src/index"),
+      "@mini-react/shared": resolve(__dirname, "./../packages/shared/src"),
     },
   },
 });
