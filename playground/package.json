@@ -11,6 +11,7 @@
   "devDependencies": {
     "typescript": "^5.5.3",
     "vite": "^5.4.8",
-    "mini-react": "workspace:*"
+    "mini-react": "workspace:*",
+    "mini-react-dom": "workspace:*"
   }
 }

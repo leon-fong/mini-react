@@ -1,21 +1,15 @@
 {
-  "name": "mini-react",
+  "name": "@mini-react/monorepo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "./src/react/index.ts",
-   "exports": {
-    ".": {
-      "import": "./src/react/index.ts"
-    }
-  },
   "scripts": {
     "dev": "pnpm -F playground dev",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "pnpm -r --filter=\"./packages/**/*\" run build",
+    "stub": "pnpm -r run stub"
   },
   "devDependencies": {
-    "typescript": "^5.5.3",
-    "vite": "^5.4.8"
+    "@types/node": "^22.7.9",
+    "typescript": "^5.5.3"
   }
 }
