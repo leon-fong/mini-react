@@ -1,12 +1,25 @@
 {
-  "name": "shared",
+  "name": "@mini-react/shared",
   "version": "1.0.0",
   "description": "",
   "main": "./dist/index.mjs",
+  "exports":{
+    ".": {
+      "import":"./dist/index.mjs"
+    },
+    "./types": {
+      "types": "./types.d.ts",
+      "import":"./dist/types.mjs"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "unbuild",
+    "stub": "unbuild --stub"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "unbuild": "^2.0.0"
+  }
 }

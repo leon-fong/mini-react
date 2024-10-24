@@ -3,7 +3,8 @@ import { createRoot } from "mini-react-dom";
 
 const Content =  (
 <div title='id'>
-<h1 title="h3">Hello</h1>
+<h1>Hello</h1>
+<br />
 </div>
 )
 // console.log(<Content />)

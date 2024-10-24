@@ -1,11 +1,11 @@
-// import { ReactElementType } from "../types";
+import { ReactElementType } from "@mini-react/shared/types";
 
 export const createRoot = (rootElement: Element) => ({
   unmount: () => {},
   render: (rootChild) => _render(rootChild, rootElement),
 });
 
-function _render(rootChild: any, rootElement: Element) {
+function _render(rootChild: ReactElementType, rootElement: Element | Text) {
   const rootChildElement =
     rootChild.type === "TEXT_ELEMENT"
       ? document.createTextNode("")
