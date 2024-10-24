@@ -1,4 +1,5 @@
 import { ReactElementType } from "@mini-react/shared/types";
+import { isProperty } from "@mini-react/shared/utils";
 
 export const createRoot = (rootElement: Element) => ({
   unmount: () => {},
@@ -9,8 +10,7 @@ function _render(rootChild: ReactElementType, rootElement: Element | Text) {
   const rootChildElement =
     rootChild.type === "TEXT_ELEMENT"
       ? document.createTextNode("")
-      : document.createElement(rootChild.type);
-  const isProperty = (key) => key !== "children";
+      : document.createElement(rootChild.type)
 
   Object.keys(rootChild.props)
     .filter(isProperty)
