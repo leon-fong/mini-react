@@ -1,10 +1,13 @@
-// import * as MiniReact from "mini-react"
+import * as MiniReact from "mini-react"
 import { createRoot } from "mini-react-dom";
 
-const content = <div>
-    <a href="xxx">link</a>
+const Content =  (
+<div title='id'>
+<h1 title="h3">Hello</h1>
 </div>
+)
+// console.log(<Content />)
 
-console.log(JSON.stringify(content, null, 2))
+console.log(JSON.stringify(<Content />, null, 2))
 
-createRoot(document.getElementById("app")).render(content)
+createRoot(document.getElementById("app")).render(Content)
