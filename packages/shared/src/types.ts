@@ -1,4 +1,4 @@
 export interface ReactElementType {
-  type: string
+  type: string | Function
   props: Record<string, any>
 }

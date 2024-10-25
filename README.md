@@ -3,6 +3,6 @@
 # Feature
 
 - [x] jsx / createElement : render function -> ReactElement / vdom
-- [ ] reconcile : vdom -> fiber
-- [ ] schedule
-- [ ] commit
+- [x] reconcile : vdom -> fiber
+- [x] render and commit
+- [x] function component
