@@ -1,6 +1,7 @@
 import { ReactElementType } from "@mini-react/shared/types";
 import {
   isEvent,
+  isFunction,
   isGone,
   isNew,
   isPropertyExceptEvent,
@@ -8,13 +9,13 @@ import {
 
 interface HookType {
   state?: any;
-  queue: any[];
+  queue: (() => any)[];
 }
 interface FiberNode extends ReactElementType {
   dom: Element | null;
   parent: FiberNode;
-  child: FiberNode;
-  sibling: FiberNode;
+  child?: FiberNode | null;
+  sibling?: FiberNode;
   alternate: FiberNode | null;
   effectTag?: "UPDATE" | "PLACEMENT" | "DELETION";
   hooks?: HookType[];
@@ -119,7 +120,7 @@ const init = (() => {
   let nextUnitOfWork: FiberNode | null = null;
   let wipRoot: FiberNode | null = null;
   let currentRoot: FiberNode | null = null;
-  let deletions: FiberNode[] | null = null;
+  let deletions: FiberNode[] = [];
 
   function workLoop(deadline: IdleDeadline) {
     let shouldYield = false;
@@ -185,11 +186,11 @@ const init = (() => {
       hook.state = action(hook.state);
     });
 
-    const setState = (action) => {
-      hook.queue.push(action);
+    const setState = (action: () => void | any) => {
+      const formattedAction = isFunction(action) ? action : () => action;
+      hook.queue.push(formattedAction);
       wipRoot = {
-        dom: currentRoot?.dom,
-        props: currentRoot?.props,
+        ...currentRoot,
         alternate: currentRoot,
       };
       nextUnitOfWork = wipRoot;
@@ -212,7 +213,10 @@ const init = (() => {
     reconcileChildren(fiber, elements);
   }
 
-  function reconcileChildren(wipFiber: FiberNode, elements: FiberNode[]) {
+  function reconcileChildren(
+    wipFiber: FiberNode,
+    elements: ReactElementType[]
+  ) {
     let index = 0;
     let oldFiber = wipFiber?.alternate?.child;
     let prevSiblings = null;
@@ -225,11 +229,11 @@ const init = (() => {
 
       if (sameType) {
         newFiber = {
-          type: oldFiber.type,
+          type: oldFiber!.type,
           props: element.props,
           parent: wipFiber,
-          dom: oldFiber.dom,
-          alternate: oldFiber,
+          dom: oldFiber!.dom,
+          alternate: oldFiber!,
           effectTag: "UPDATE",
         };
       }
@@ -250,8 +254,8 @@ const init = (() => {
         deletions.push(oldFiber);
       }
 
-      if(oldFiber) {
-        oldFiber = oldFiber.sibling
+      if (oldFiber) {
+        oldFiber = oldFiber.sibling;
       }
 
       if (index === 0) {
