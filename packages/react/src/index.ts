@@ -1,4 +1,7 @@
-import { useState as _useState } from "mini-react-reconciler";
+import {
+  useState as _useState,
+  useEffect as _useEffect,
+} from "mini-react-reconciler";
 
 type Props = Record<string, any> | null;
 
@@ -26,6 +29,7 @@ function createTextElement(text: string) {
 }
 
 export const useState = _useState;
+export const useEffect = _useEffect;
 
 const miniReact = {
   createElement,

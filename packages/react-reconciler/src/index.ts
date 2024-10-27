@@ -1,5 +1,6 @@
 import { ReactElementType } from "@mini-react/shared/types";
 import {
+  isArrayEqual,
   isEvent,
   isFunction,
   isGone,
@@ -7,18 +8,27 @@ import {
   isPropertyExceptEvent,
 } from "@mini-react/shared/utils";
 
-interface HookType {
+type Destructor = () => void;
+interface StateHookType {
   state?: any;
-  queue: (() => any)[];
+  queue: ((state: any) => any)[];
 }
+
+interface EffectHookType {
+  callback: () => void | Destructor;
+  deps?: unknown[];
+  cleanup?: () => void;
+}
+
 interface FiberNode extends ReactElementType {
   dom: Element | null;
   parent: FiberNode;
-  child?: FiberNode | null;
-  sibling?: FiberNode;
+  child: FiberNode | null;
+  sibling: FiberNode | null;
   alternate: FiberNode | null;
   effectTag?: "UPDATE" | "PLACEMENT" | "DELETION";
-  hooks?: HookType[];
+  stateHooks?: StateHookType[];
+  effectHooks?: EffectHookType[];
 }
 
 const init = (() => {
@@ -26,7 +36,7 @@ const init = (() => {
     const dom =
       fiber.type === "TEXT_ELEMENT"
         ? document.createTextNode("")
-        : document.createElement(fiber.type);
+        : document.createElement(fiber.type as keyof HTMLElementTagNameMap);
 
     updateDom(dom, {}, fiber.props);
 
@@ -72,11 +82,13 @@ const init = (() => {
   function commitRoot() {
     deletions.forEach(commitWork);
     commitWork(wipRoot.child);
+    commitEffectHooks();
     currentRoot = wipRoot;
     wipRoot = null;
+    deletions = [];
   }
 
-  function commitWork(fiber: FiberNode) {
+  function commitWork(fiber: FiberNode | null) {
     if (!fiber) return;
 
     let domParentFiber = fiber.parent;
@@ -105,6 +117,53 @@ const init = (() => {
     }
   }
 
+  function commitEffectHooks() {
+    function runCleanup(fiber: FiberNode | null) {
+      if (!fiber) return;
+
+      fiber.alternate?.effectHooks?.forEach((oldHook, index) => {
+        const deps = fiber.effectHooks?.[index].deps || [];
+        const sameDeps = isArrayEqual(oldHook.deps || [], deps);
+        if (!oldHook.deps || !sameDeps) {
+          oldHook.cleanup?.();
+        }
+      });
+
+      runCleanup(fiber.child);
+      runCleanup(fiber.sibling);
+    }
+
+    function run(fiber: FiberNode | null) {
+      if (!fiber) return;
+
+      fiber.effectHooks?.forEach((hook, index) => {
+        // first render
+        if (!fiber.alternate) {
+          hook.cleanup = hook.callback() as Destructor;
+          return;
+        }
+
+        if (!hook.deps) {
+          hook.cleanup = hook.callback() as Destructor;
+        }
+
+        if (hook.deps!.length > 0) {
+          const oldHook = fiber.alternate.effectHooks?.[index];
+          const sameDeps = isArrayEqual(oldHook!.deps!, hook.deps!);
+          if (!sameDeps) {
+            hook.cleanup = hook.callback() as Destructor;
+          }
+        }
+      });
+
+      run(fiber.child);
+      run(fiber.sibling);
+    }
+
+    runCleanup(wipRoot);
+    run(wipRoot);
+  }
+
   function render(element: ReactElementType, container: Element) {
     wipRoot = {
       dom: container,
@@ -125,7 +184,7 @@ const init = (() => {
   function workLoop(deadline: IdleDeadline) {
     let shouldYield = false;
     while (nextUnitOfWork && !shouldYield) {
-      nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+      nextUnitOfWork = performUnitOfWork(nextUnitOfWork)!;
       shouldYield = deadline.timeRemaining() < 1;
     }
 
@@ -168,38 +227,11 @@ const init = (() => {
   function updateFunctionComponent(fiber: FiberNode) {
     wipFiber = fiber;
     hookIndex = 0;
-    wipFiber.hooks = [];
+    wipFiber.stateHooks = [];
+    wipFiber.effectHooks = [];
 
     const children = [fiber.type(fiber.props)];
     reconcileChildren(fiber, children);
-  }
-
-  function useState(initial) {
-    const oldHook = wipFiber?.alternate?.hooks?.[hookIndex as number];
-    const hook = {
-      state: oldHook ? oldHook.state : initial,
-      queue: [],
-    };
-
-    const actions = oldHook ? oldHook.queue : [];
-    actions.forEach((action) => {
-      hook.state = action(hook.state);
-    });
-
-    const setState = (action: () => void | any) => {
-      const formattedAction = isFunction(action) ? action : () => action;
-      hook.queue.push(formattedAction);
-      wipRoot = {
-        ...currentRoot,
-        alternate: currentRoot,
-      };
-      nextUnitOfWork = wipRoot;
-      deletions = [];
-    };
-
-    wipFiber?.hooks?.push(hook);
-    hookIndex++;
-    return [hook.state, setState];
   }
 
   function updateHostComponent(fiber: FiberNode) {
@@ -269,7 +301,45 @@ const init = (() => {
     }
   }
 
-  return { render, useState };
+  function useState(initial?: any) {
+    const oldHook = wipFiber?.alternate?.stateHooks?.[hookIndex as number];
+    const hook: StateHookType = {
+      state: oldHook ? oldHook.state : initial,
+      queue: oldHook ? oldHook.queue : [],
+    };
+
+    hook.queue.forEach((action) => {
+      hook.state = action(hook.state);
+    });
+
+    hook.queue = [];
+    hookIndex++;
+    wipFiber?.stateHooks?.push(hook);
+
+    function setState(action) {
+      const formattedAction = isFunction(action) ? action : () => action;
+      hook.queue.push(formattedAction);
+      wipRoot = {
+        ...currentRoot,
+        alternate: currentRoot,
+      };
+      nextUnitOfWork = wipRoot;
+    }
+
+    return [hook.state, setState];
+  }
+
+  function useEffect(callback: () => void, deps?: unknown[]) {
+    const effectHook: EffectHookType = {
+      callback,
+      deps,
+      cleanup: undefined,
+    };
+
+    wipFiber?.effectHooks?.push(effectHook);
+  }
+
+  return { render, useState, useEffect };
 })();
 
-export const { render, useState } = init;
+export const { render, useState, useEffect } = init;
