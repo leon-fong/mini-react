@@ -1,4 +1,4 @@
-import { _render } from "mini-react-reconciler";
+import { render as _render } from "mini-react-reconciler";
 import { ReactElementType } from "@mini-react/shared/types";
 
 export const createRoot = (rootElement: Element) => ({

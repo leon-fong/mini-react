@@ -6,6 +6,10 @@ import {
   isPropertyExceptEvent,
 } from "@mini-react/shared/utils";
 
+interface HookType {
+  state?: any;
+  queue: any[];
+}
 interface FiberNode extends ReactElementType {
   dom: Element | null;
   parent: FiberNode;
@@ -13,6 +17,7 @@ interface FiberNode extends ReactElementType {
   sibling: FiberNode;
   alternate: FiberNode | null;
   effectTag?: "UPDATE" | "PLACEMENT" | "DELETION";
+  hooks?: HookType[];
 }
 
 const init = (() => {
@@ -99,7 +104,7 @@ const init = (() => {
     }
   }
 
-  function _render(element: ReactElementType, container: Element) {
+  function render(element: ReactElementType, container: Element) {
     wipRoot = {
       dom: container,
       props: {
@@ -156,9 +161,44 @@ const init = (() => {
     }
   }
 
+  let wipFiber: FiberNode | null = null;
+  let hookIndex: number | null = null;
+
   function updateFunctionComponent(fiber: FiberNode) {
+    wipFiber = fiber;
+    hookIndex = 0;
+    wipFiber.hooks = [];
+
     const children = [fiber.type(fiber.props)];
     reconcileChildren(fiber, children);
+  }
+
+  function useState(initial) {
+    const oldHook = wipFiber?.alternate?.hooks?.[hookIndex as number];
+    const hook = {
+      state: oldHook ? oldHook.state : initial,
+      queue: [],
+    };
+
+    const actions = oldHook ? oldHook.queue : [];
+    actions.forEach((action) => {
+      hook.state = action(hook.state);
+    });
+
+    const setState = (action) => {
+      hook.queue.push(action);
+      wipRoot = {
+        dom: currentRoot?.dom,
+        props: currentRoot?.props,
+        alternate: currentRoot,
+      };
+      nextUnitOfWork = wipRoot;
+      deletions = [];
+    };
+
+    wipFiber?.hooks?.push(hook);
+    hookIndex++;
+    return [hook.state, setState];
   }
 
   function updateHostComponent(fiber: FiberNode) {
@@ -210,6 +250,10 @@ const init = (() => {
         deletions.push(oldFiber);
       }
 
+      if(oldFiber) {
+        oldFiber = oldFiber.sibling
+      }
+
       if (index === 0) {
         wipFiber.child = newFiber;
       } else if (element) {
@@ -221,7 +265,7 @@ const init = (() => {
     }
   }
 
-  return { _render };
+  return { render, useState };
 })();
 
-export const { _render } = init;
+export const { render, useState } = init;

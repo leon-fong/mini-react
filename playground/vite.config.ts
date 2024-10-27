@@ -4,8 +4,8 @@ import { defineConfig } from "vite";
 export default defineConfig({
   // ref: https://v2.vitejs.dev/guide/features.html#jsx
   esbuild: {
-    // jsxInject: `import * as MiniReact from "mini-react"`,
-    jsxFactory: "MiniReact.createElement",
+    jsxInject: `import miniReact from "mini-react"`,
+    jsxFactory: "miniReact.createElement",
     jsxFragment: "Fragment",
   },
 

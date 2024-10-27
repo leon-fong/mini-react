@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "unbuild": "^2.0.0"
+    "unbuild": "^2.0.0",
+    "mini-react-reconciler": "workspace:*"
   }
 }
