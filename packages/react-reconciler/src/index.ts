@@ -253,7 +253,7 @@ const init = (() => {
     let oldFiber = wipFiber?.alternate?.child;
     let prevSiblings = null;
 
-    while (index < elements.length || !!oldFiber) {
+    while (index < elements.length || oldFiber) {
       const element = elements[index];
       let newFiber: FiberNode | null = null;
 
@@ -302,6 +302,7 @@ const init = (() => {
   }
 
   function useState(initial?: any) {
+    const currentFiber = wipFiber
     const oldHook = wipFiber?.alternate?.stateHooks?.[hookIndex as number];
     const hook: StateHookType = {
       state: oldHook ? oldHook.state : initial,
@@ -316,12 +317,12 @@ const init = (() => {
     hookIndex++;
     wipFiber?.stateHooks?.push(hook);
 
-    function setState(action) {
+    function setState(action: any) {
       const formattedAction = isFunction(action) ? action : () => action;
       hook.queue.push(formattedAction);
       wipRoot = {
-        ...currentRoot,
-        alternate: currentRoot,
+        ...currentFiber,
+        alternate: currentFiber,
       };
       nextUnitOfWork = wipRoot;
     }

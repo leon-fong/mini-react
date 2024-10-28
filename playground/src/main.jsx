@@ -9,22 +9,28 @@ import { useState, useEffect } from "mini-react";
 //     </h1>
 //   )
 // }
+function Counter() {
 
-function AutoCounter() {
-  const [count,setCount] = useState(5)
-  
+  const [count, setCount] = useState(3)
+
   useEffect(() => {
     const timer = setInterval(() => {
-        setCount((count)=>  count + 1) // FIXME: not working
+        setCount((c)=> c + 1)
     }, 1000);
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, []);
 
-   return (<h1>{count}</h1>)
+  return <div>
+    <p>{count}</p>
+  </div>;
+}
+
+function App() {
+  return <Counter ></Counter>
 }
 
 createRoot(document.getElementById("app"))
 .render(
-  <AutoCounter />
+  <App />
   )
 
